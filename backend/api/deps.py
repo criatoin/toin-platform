@@ -14,3 +14,23 @@ async def get_tenant_from_slug(slug: str):
     if not result.data:
         raise HTTPException(status_code=404, detail="Tenant not found")
     return result.data
+
+
+async def get_tenant_from_jwt(authorization: str = Header(...)):
+    """Valida JWT do Supabase e retorna o tenant do usuario autenticado."""
+    token = authorization.replace("Bearer ", "")
+    try:
+        user = supabase.auth.get_user(token)
+    except Exception:
+        raise HTTPException(401, "Invalid token")
+
+    user_record = (
+        supabase.table("users")
+        .select("*, tenants(*)")
+        .eq("id", user.user.id)
+        .single()
+        .execute()
+    )
+    if not user_record.data:
+        raise HTTPException(403, "User has no tenant")
+    return user_record.data["tenants"]
