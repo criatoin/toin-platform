@@ -1,14 +1,13 @@
 FROM python:3.12-slim
 WORKDIR /app
 
-# Instala dependências primeiro (aproveita cache de camadas)
+# Copia apenas o pyproject.toml para instalar dependências (aproveita cache de camadas)
 COPY pyproject.toml ./
-RUN pip install --no-cache-dir pip setuptools wheel && \
-    pip install --no-cache-dir fastapi "uvicorn[standard]" pydantic-settings supabase \
-    langchain langgraph langchain-groq langfuse httpx python-dotenv \
-    google-api-python-client google-auth
+# Cria um pacote instalável mínimo para que o pip consiga ler as deps do pyproject.toml
+RUN mkdir -p api && touch api/__init__.py && \
+    pip install --no-cache-dir ".[dev]"
 
-# Copia o código após instalar dependências
+# Copia o restante do código após instalar dependências
 COPY . .
 
 EXPOSE 8000
