@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     supabase_service_role_key: str
     evolution_api_url: str
     evolution_api_key: str
-    groq_api_key: str
+    openrouter_api_key: str
     google_calendar_credentials_json: str = "{}"
     google_calendar_id: str = "primary"
     langfuse_public_key: str = ""

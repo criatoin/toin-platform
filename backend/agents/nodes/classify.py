@@ -1,10 +1,15 @@
-from langchain_groq import ChatGroq
+from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
 from agents.state import AgentState
 from api.config import settings
 import json
 
-llm = ChatGroq(api_key=settings.groq_api_key, model="llama-3.3-70b-versatile", temperature=0)
+llm = ChatOpenAI(
+    api_key=settings.openrouter_api_key,
+    base_url="https://openrouter.ai/api/v1",
+    model="meta-llama/llama-3.3-70b-instruct",
+    temperature=0,
+)
 
 CLASSIFY_PROMPT = """
 Analise a ultima mensagem do usuario e o estado atual da conversa.

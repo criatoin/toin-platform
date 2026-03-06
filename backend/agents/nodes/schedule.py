@@ -1,11 +1,16 @@
-from langchain_groq import ChatGroq
+from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, AIMessage
 from agents.state import AgentState
 from agents.tools.calendar_tool import check_availability, create_event
 from api.config import settings
 import json
 
-llm = ChatGroq(api_key=settings.groq_api_key, model="llama-3.3-70b-versatile", temperature=0.2)
+llm = ChatOpenAI(
+    api_key=settings.openrouter_api_key,
+    base_url="https://openrouter.ai/api/v1",
+    model="meta-llama/llama-3.3-70b-instruct",
+    temperature=0.2,
+)
 
 
 def schedule_node(state: AgentState) -> AgentState:
