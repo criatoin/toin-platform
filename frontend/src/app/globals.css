@@ -42,13 +42,13 @@ body {
 
 /* Selection */
 ::selection {
-  background: rgba(245, 158, 11, 0.25);
-  color: #f59e0b;
+  background: rgba(255, 197, 51, 0.25);
+  color: #ffc533;
 }
 
 /* Focus rings */
 :focus-visible {
-  outline: 1.5px solid rgba(245, 158, 11, 0.6);
+  outline: 1.5px solid rgba(255, 197, 51, 0.6);
   outline-offset: 2px;
 }
 

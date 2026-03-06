@@ -25,9 +25,14 @@ const config: Config = {
         },
         border: "#252838",
         amber: {
-          DEFAULT: "#F59E0B",
-          dim: "#92600A",
-          glow: "rgba(245,158,11,0.15)",
+          DEFAULT: "#FFC533",
+          dim: "#9A6E00",
+          glow: "rgba(255,197,51,0.15)",
+        },
+        purple: {
+          DEFAULT: "#6010C6",
+          dim: "#3B0875",
+          glow: "rgba(96,16,198,0.15)",
         },
         emerald: {
           DEFAULT: "#10B981",

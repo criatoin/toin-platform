@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
-import { Bot, Loader2, Eye, EyeOff, AlertTriangle } from "lucide-react";
+import { Loader2, Eye, EyeOff, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
@@ -34,30 +35,26 @@ export default function LoginPage() {
         className="absolute inset-0 opacity-[0.04]"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(245,158,11,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(245,158,11,0.5) 1px, transparent 1px)",
+            "linear-gradient(rgba(255,197,51,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,197,51,0.5) 1px, transparent 1px)",
           backgroundSize: "40px 40px",
         }}
       />
 
       {/* Glow */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-amber-DEFAULT/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-DEFAULT/5 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative z-10 w-full max-w-sm px-4">
         <div className="bg-base-900 border border-border rounded-2xl p-8 shadow-2xl animate-fade-up">
           {/* Logo */}
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-amber-DEFAULT/10 border border-amber-dim/50 flex items-center justify-center">
-              <Bot size={18} className="text-amber-DEFAULT" />
-            </div>
-            <div>
-              <h1
-                className="text-lg font-bold text-text-primary leading-none"
-                style={{ fontFamily: "var(--font-syne)" }}
-              >
-                TOIN
-              </h1>
-              <p className="text-xs text-text-muted">Atendimento Inteligente</p>
-            </div>
+            <Image
+              src="/logo.png"
+              alt="TOIN"
+              width={120}
+              height={40}
+              className="object-contain"
+              priority
+            />
           </div>
 
           <h2
