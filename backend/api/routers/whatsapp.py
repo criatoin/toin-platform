@@ -68,7 +68,7 @@ async def handle_incoming_message(msg: dict):
         .execute()
     )
 
-    if conv.data:
+    if conv and conv.data:
         conversation = conv.data
     else:
         agent = (
