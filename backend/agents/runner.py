@@ -7,11 +7,14 @@ from langfuse import Langfuse
 from api.config import settings
 
 graph = build_toin_graph()
-langfuse = Langfuse(
-    public_key=settings.langfuse_public_key,
-    secret_key=settings.langfuse_secret_key,
-    host=settings.langfuse_host,
-)
+
+_langfuse = None
+if settings.langfuse_public_key and settings.langfuse_secret_key:
+    _langfuse = Langfuse(
+        public_key=settings.langfuse_public_key,
+        secret_key=settings.langfuse_secret_key,
+        host=settings.langfuse_host,
+    )
 
 
 async def run_toin_agent(
@@ -22,7 +25,7 @@ async def run_toin_agent(
     instance_name: str,
     from_phone: str,
 ):
-    trace = langfuse.trace(name="toin-agent", metadata={"tenant_id": tenant_id})
+    trace = _langfuse.trace(name="toin-agent", metadata={"tenant_id": tenant_id}) if _langfuse else None
 
     saved_state = conversation.get("agent_state") or {}
 
@@ -40,9 +43,10 @@ async def run_toin_agent(
         "response_text": None,
     }
 
-    span = trace.span(name="graph-execution")
+    span = trace.span(name="graph-execution") if trace else None
     result = graph.invoke(state)
-    span.end()
+    if span:
+        span.end()
 
     # Persiste estado atualizado na conversa
     supabase.table("conversations").update({
@@ -71,5 +75,7 @@ async def run_toin_agent(
             "content": result["response_text"],
         }).execute()
 
-    trace.update(output={"response": result.get("response_text")})
-    langfuse.flush()
+    if trace:
+        trace.update(output={"response": result.get("response_text")})
+    if _langfuse:
+        _langfuse.flush()

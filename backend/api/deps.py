@@ -28,9 +28,9 @@ async def get_tenant_from_jwt(authorization: str = Header(...)):
         supabase.table("users")
         .select("*, tenants(*)")
         .eq("id", user.user.id)
-        .single()
+        .maybe_single()
         .execute()
     )
-    if not user_record.data:
+    if not user_record or not user_record.data:
         raise HTTPException(403, "User has no tenant")
     return user_record.data["tenants"]
