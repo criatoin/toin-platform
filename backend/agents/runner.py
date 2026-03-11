@@ -48,7 +48,7 @@ async def run_toin_agent(
     if span:
         span.end()
 
-    # Persiste estado atualizado na conversa
+    # Persiste estado atualizado na conversa (updated_at é gerenciado pelo trigger do DB)
     supabase.table("conversations").update({
         "agent_state": {
             "lead_name": result.get("lead_name"),
@@ -57,7 +57,6 @@ async def run_toin_agent(
             "lead_email": result.get("lead_email"),
             "current_stage": result.get("current_stage"),
         },
-        "updated_at": "now()",
     }).eq("id", conversation["id"]).execute()
 
     # Envia resposta via WhatsApp

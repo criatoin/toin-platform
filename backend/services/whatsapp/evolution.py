@@ -62,7 +62,7 @@ def normalize_evolution_event(payload: dict) -> Optional[dict]:
     key = data.get("key", {})
 
     # Ignorar mensagens enviadas pelo proprio bot
-    if key.get("fromMe", True):
+    if key.get("fromMe", False):
         return None
 
     jid = key.get("remoteJid", "")

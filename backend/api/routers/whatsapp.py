@@ -41,10 +41,10 @@ async def handle_incoming_message(msg: dict):
         supabase.table("whatsapp_instances")
         .select("*")
         .eq("instance_name", msg["instance_name"])
-        .single()
+        .maybe_single()
         .execute()
     )
-    if not inst.data:
+    if not inst or not inst.data:
         return
 
     tenant_id = inst.data["tenant_id"]
