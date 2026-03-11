@@ -59,20 +59,24 @@ async def run_toin_agent(
         },
     }).eq("id", conversation["id"]).execute()
 
-    # Envia resposta via WhatsApp
+    # Salva resposta no DB primeiro, depois envia pelo WhatsApp
+    # (garante persistência mesmo se o envio falhar)
     if result.get("response_text"):
-        await adapter.send_text(
-            instance=instance_name,
-            to=from_phone,
-            text=result["response_text"],
-        )
-
         supabase.table("messages").insert({
             "conversation_id": conversation["id"],
             "tenant_id": tenant_id,
             "sender_type": "bot",
             "content": result["response_text"],
         }).execute()
+
+        try:
+            await adapter.send_text(
+                instance=instance_name,
+                to=from_phone,
+                text=result["response_text"],
+            )
+        except Exception as e:
+            print(f"[TOIN] Erro ao enviar mensagem WhatsApp para {from_phone}: {e}")
 
     if trace:
         trace.update(output={"response": result.get("response_text")})

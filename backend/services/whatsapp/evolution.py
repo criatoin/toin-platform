@@ -65,7 +65,13 @@ def normalize_evolution_event(payload: dict) -> Optional[dict]:
     if key.get("fromMe", False):
         return None
 
-    jid = key.get("remoteJid", "")
+    # LID addressing: remoteJid contem um LID (ex: 280693326262354@lid)
+    # O numero real esta em remoteJidAlt (ex: 5511999999999@s.whatsapp.net)
+    addressing_mode = key.get("addressingMode")
+    if addressing_mode == "lid" and key.get("remoteJidAlt"):
+        jid = key["remoteJidAlt"]
+    else:
+        jid = key.get("remoteJid", "")
     # Converter JID para numero: 5511999999999@s.whatsapp.net -> +5511999999999
     phone_raw = jid.split("@")[0]
     from_phone = f"+{phone_raw}"
