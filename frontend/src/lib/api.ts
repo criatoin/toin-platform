@@ -25,6 +25,11 @@ export const api = {
         method: "PATCH",
         body: JSON.stringify({ bot_active: botActive }),
       }),
+    sendMessage: (id: string, content: string) =>
+      apiFetch(`/conversations/${id}/messages`, {
+        method: "POST",
+        body: JSON.stringify({ content }),
+      }),
   },
   contacts: {
     list: () => apiFetch("/contacts/"),

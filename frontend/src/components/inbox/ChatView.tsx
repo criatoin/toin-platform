@@ -1,17 +1,19 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Bot, User, UserCircle2, Image, FileText, Mic } from "lucide-react";
+import { Bot, User, UserCircle2, Image, FileText, Mic, Send, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HandoffButton } from "./HandoffButton";
+import { api } from "@/lib/api";
 import type { Conversation, Message } from "@/types";
 
 interface ChatViewProps {
   conversation: Conversation;
   messages: Message[];
   onToggleBot: (botActive: boolean) => Promise<void>;
+  onMessageSent?: (msg: Message) => void;
 }
 
 function SenderBadge({ type }: { type: Message["sender_type"] }) {
@@ -133,9 +135,33 @@ function DateDivider({ date }: { date: string }) {
   );
 }
 
-export function ChatView({ conversation, messages, onToggleBot }: ChatViewProps) {
+export function ChatView({ conversation, messages, onToggleBot, onMessageSent }: ChatViewProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [inputText, setInputText] = useState("");
+  const [sending, setSending] = useState(false);
   const contact = conversation.contacts;
+
+  async function handleSend() {
+    const text = inputText.trim();
+    if (!text || sending) return;
+    setSending(true);
+    try {
+      const msg = await api.conversations.sendMessage(conversation.id, text);
+      setInputText("");
+      onMessageSent?.(msg);
+    } catch (err) {
+      console.error("Failed to send message:", err);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -227,37 +253,69 @@ export function ChatView({ conversation, messages, onToggleBot }: ChatViewProps)
         <div ref={bottomRef} />
       </div>
 
-      {/* Footer bar */}
-      <div className="px-5 py-2.5 border-t border-border bg-base-900/60 shrink-0">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-mono text-text-muted">
-            ID: {conversation.id.slice(0, 8)}…
-          </span>
-          <div className="flex items-center gap-4">
-            <span className="text-[10px] text-text-muted">
-              {messages.length} mensagen{messages.length !== 1 ? "s" : ""}
-            </span>
-            <span
+      {/* Footer — input de mensagem (modo humano) ou barra de status */}
+      {!conversation.bot_active ? (
+        <div className="px-4 py-3 border-t border-border bg-base-900/80 shrink-0">
+          <div className="flex items-end gap-2">
+            <textarea
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Digite sua mensagem… (Enter para enviar)"
+              rows={1}
+              disabled={sending}
+              className="flex-1 resize-none bg-base-700 border border-border rounded-xl px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-emerald-dim focus:bg-base-600 transition-colors disabled:opacity-50 max-h-32 overflow-y-auto"
+              style={{ lineHeight: "1.5" }}
+            />
+            <button
+              onClick={handleSend}
+              disabled={!inputText.trim() || sending}
               className={cn(
-                "flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider",
-                conversation.status === "open"
-                  ? "text-emerald-DEFAULT"
-                  : "text-text-muted"
+                "flex items-center justify-center w-9 h-9 rounded-xl transition-all shrink-0",
+                inputText.trim() && !sending
+                  ? "bg-emerald-DEFAULT text-white hover:bg-emerald-DEFAULT/80"
+                  : "bg-base-600 text-text-muted cursor-not-allowed"
               )}
             >
+              {sending ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
+            </button>
+          </div>
+          <p className="text-[10px] text-text-muted mt-1.5 px-1">
+            Modo humano ativo — suas mensagens são enviadas diretamente ao cliente
+          </p>
+        </div>
+      ) : (
+        <div className="px-5 py-2.5 border-t border-border bg-base-900/60 shrink-0">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-mono text-text-muted">
+              ID: {conversation.id.slice(0, 8)}…
+            </span>
+            <div className="flex items-center gap-4">
+              <span className="text-[10px] text-text-muted">
+                {messages.length} mensagen{messages.length !== 1 ? "s" : ""}
+              </span>
               <span
                 className={cn(
-                  "w-1.5 h-1.5 rounded-full",
+                  "flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider",
                   conversation.status === "open"
-                    ? "bg-emerald-DEFAULT animate-pulse-dot"
-                    : "bg-text-muted"
+                    ? "text-emerald-DEFAULT"
+                    : "text-text-muted"
                 )}
-              />
-              {conversation.status === "open" ? "Aberta" : "Fechada"}
-            </span>
+              >
+                <span
+                  className={cn(
+                    "w-1.5 h-1.5 rounded-full",
+                    conversation.status === "open"
+                      ? "bg-emerald-DEFAULT animate-pulse-dot"
+                      : "bg-text-muted"
+                  )}
+                />
+                {conversation.status === "open" ? "Aberta" : "Fechada"}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

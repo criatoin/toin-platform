@@ -192,6 +192,7 @@ export default function InboxPage() {
               conversation={selected}
               messages={messages}
               onToggleBot={handleToggleBot}
+              onMessageSent={(msg) => setMessages((prev) => [...prev, msg])}
             />
           )
         ) : (
