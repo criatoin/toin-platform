@@ -4,6 +4,31 @@ from agents.state import AgentState
 from agents.tools.crm_tool import save_lead
 from api.config import settings
 import json
+import re
+
+
+def _extract_json(text: str) -> dict | None:
+    """Extrai o primeiro objeto JSON valido de um texto que pode conter texto misto."""
+    # 1. Tenta parse direto
+    try:
+        return json.loads(text.strip())
+    except Exception:
+        pass
+    # 2. Tenta extrair de bloco markdown ```json ... ```
+    md = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
+    if md:
+        try:
+            return json.loads(md.group(1))
+        except Exception:
+            pass
+    # 3. Tenta encontrar o primeiro { ... } no texto
+    brace = re.search(r"\{.*\}", text, re.DOTALL)
+    if brace:
+        try:
+            return json.loads(brace.group(0))
+        except Exception:
+            pass
+    return None
 
 llm = ChatOpenAI(
     api_key=settings.openrouter_api_key,
@@ -41,10 +66,11 @@ Responda em JSON:
         *state["messages"],
     ])
 
-    try:
-        parsed = json.loads(result.content)
-    except Exception:
-        parsed = {"response": result.content, "advance_to_schedule": False}
+    parsed = _extract_json(result.content)
+    if not parsed:
+        # LLM nao retornou JSON — usa o texto completo como resposta (sem o bloco JSON se houver)
+        clean = re.sub(r"\{.*\}", "", result.content, flags=re.DOTALL).strip()
+        parsed = {"response": clean or result.content, "advance_to_schedule": False}
 
     updates = {
         "response_text": parsed.get("response", ""),

@@ -3,6 +3,27 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from agents.state import AgentState
 from api.config import settings
 import json
+import re
+
+
+def _extract_json(text: str) -> dict | None:
+    try:
+        return json.loads(text.strip())
+    except Exception:
+        pass
+    md = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
+    if md:
+        try:
+            return json.loads(md.group(1))
+        except Exception:
+            pass
+    brace = re.search(r"\{.*\}", text, re.DOTALL)
+    if brace:
+        try:
+            return json.loads(brace.group(0))
+        except Exception:
+            pass
+    return None
 
 llm = ChatOpenAI(
     api_key=settings.openrouter_api_key,
@@ -40,14 +61,11 @@ def classify_node(state: AgentState) -> AgentState:
         HumanMessage(content=f"Ultima mensagem: {last_msg}"),
     ])
 
-    try:
-        parsed = json.loads(result.content)
-    except Exception:
-        parsed = {
-            "intent": "other",
-            "handoff_needed": False,
-            "next_stage": state.get("current_stage", "qualify"),
-        }
+    parsed = _extract_json(result.content) or {
+        "intent": "other",
+        "handoff_needed": False,
+        "next_stage": state.get("current_stage", "qualify"),
+    }
 
     return {
         **state,
