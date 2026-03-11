@@ -27,17 +27,33 @@ HANDOFF_KEYWORDS = [
 
 
 @tool
-def verificar_disponibilidade() -> str:
-    """Consulta os horários disponíveis no Google Calendar para agendar uma reunião de demonstração da TOIN. Use quando o cliente quiser agendar."""
+def verificar_disponibilidade(dia_preferido: str, horario_preferido: str) -> str:
+    """
+    Verifica se o dia e horário preferidos pelo cliente estão disponíveis no calendário.
+
+    PRÉ-CONDIÇÃO OBRIGATÓRIA: só chame esta ferramenta APÓS o cliente ter informado
+    explicitamente o dia preferido E o horário preferido na conversa.
+
+    dia_preferido: dia que o cliente mencionou, ex: "segunda", "15/03", "amanhã"
+    horario_preferido: horário que o cliente mencionou, ex: "14h", "10:00", "manhã"
+    """
     return check_availability(days_ahead=7)
 
 
 @tool
 def agendar_reuniao(start_iso: str, lead_name: str, lead_email: str, lead_phone: str = "") -> str:
-    """Cria evento no Google Calendar. Use quando o cliente confirmar o horário e informar o e-mail.
-    start_iso: datetime no formato ISO 8601, ex: 2026-03-15T14:00:00
-    lead_name: nome do cliente
-    lead_email: e-mail do cliente para envio do convite
+    """
+    Cria a reunião de demonstração no Google Calendar.
+
+    PRÉ-CONDIÇÃO OBRIGATÓRIA: só chame esta ferramenta APÓS:
+    1. O cliente ter confirmado o dia e horário específico
+    2. O cliente ter fornecido o e-mail
+    3. O cliente ter confirmado que quer agendar
+
+    start_iso: data e hora no formato ISO 8601 BASEADO no que o cliente confirmou,
+               ex: "2026-03-15T14:00:00" — NUNCA invente a data, use o que o cliente disse.
+    lead_name: nome do cliente coletado na conversa
+    lead_email: e-mail fornecido pelo cliente
     lead_phone: telefone do cliente (opcional)
     """
     return create_event(start_iso, lead_name, lead_email, lead_phone)
