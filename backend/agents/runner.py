@@ -67,10 +67,15 @@ async def run_toin_agent(
     response_text = result.get("response_text") or ""
 
     if response_text:
-        # Divide em partes por \n\n para envio natural no WhatsApp
-        parts = [p.strip() for p in response_text.split("\n\n") if p.strip()]
-        if not parts:
-            parts = [response_text]
+        # Divide em partes para envio natural no WhatsApp
+        # Quebra em \n\n (parágrafos) e \n (linhas)
+        raw_parts: list[str] = []
+        for para in response_text.split("\n\n"):
+            for line in para.split("\n"):
+                line = line.strip()
+                if line:
+                    raw_parts.append(line)
+        parts = raw_parts if raw_parts else [response_text]
 
         for i, part in enumerate(parts):
             # Salva no DB primeiro

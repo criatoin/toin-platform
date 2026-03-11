@@ -88,8 +88,8 @@ async def handle_incoming_message(msg: dict):
         }).execute()
         conversation = new_conv.data[0]
 
-    # Salva mensagem
-    supabase.table("messages").insert({
+    # Salva mensagem no DB imediatamente (para o painel atualizar em tempo real)
+    saved_msg = supabase.table("messages").insert({
         "conversation_id": conversation["id"],
         "tenant_id": tenant_id,
         "sender_type": "user",
@@ -97,9 +97,28 @@ async def handle_incoming_message(msg: dict):
         "media_type": msg.get("media_type"),
         "whatsapp_message_id": msg["raw_message_id"],
     }).execute()
+    msg_id = saved_msg.data[0]["id"] if saved_msg.data else None
 
-    # Dispara agente se bot ativo
-    if conversation["bot_active"] and msg.get("text"):
+    # Dispara agente se bot ativo — com debounce de 3s para mensagens quebradas
+    if conversation["bot_active"] and msg.get("text") and msg_id:
+        import asyncio
+        await asyncio.sleep(3)  # Aguarda o usuário terminar de digitar
+
+        # Verifica se chegou mensagem mais recente enquanto aguardava
+        latest = (
+            supabase.table("messages")
+            .select("id")
+            .eq("conversation_id", conversation["id"])
+            .eq("sender_type", "user")
+            .order("created_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        latest_id = latest.data[0]["id"] if latest.data else None
+
+        if latest_id != msg_id:
+            return  # Mensagem mais recente chegou, esta será respondida por ela
+
         await run_toin_agent(
             conversation=conversation,
             message_text=msg["text"],

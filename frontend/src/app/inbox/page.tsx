@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { api } from "@/lib/api";
 import { ConversationList } from "@/components/inbox/ConversationList";
@@ -16,6 +16,10 @@ export default function InboxPage() {
   const [loadingList, setLoadingList] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [realtimeConnected, setRealtimeConnected] = useState(false);
+
+  // Ref para evitar stale closure no handler do Realtime
+  const selectedRef = useRef<Conversation | null>(null);
+  useEffect(() => { selectedRef.current = selected; }, [selected]);
 
   // Load conversations
   useEffect(() => {
@@ -51,29 +55,25 @@ export default function InboxPage() {
     loadMessages();
   }, [selected?.id]);
 
-  // Supabase Realtime — subscribe to new messages
+  // Supabase Realtime — subscription estável (criada 1x, usa ref para evitar stale closure)
   useEffect(() => {
     const channel = supabase
-      .channel("inbox-realtime")
+      .channel("inbox-stable")
       .on(
         "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-        },
+        { event: "INSERT", schema: "public", table: "messages" },
         (payload) => {
           const newMsg = payload.new as Message;
 
-          // If message belongs to selected conversation, append it
-          if (selected && newMsg.conversation_id === selected.id) {
+          // Atualiza mensagens da conversa selecionada via ref (sem stale closure)
+          if (selectedRef.current?.id === newMsg.conversation_id) {
             setMessages((prev) => {
               if (prev.find((m) => m.id === newMsg.id)) return prev;
               return [...prev, newMsg];
             });
           }
 
-          // Update conversation list preview
+          // Atualiza preview na lista de conversas
           setConversations((prev) =>
             prev.map((c) =>
               c.id === newMsg.conversation_id
@@ -85,17 +85,21 @@ export default function InboxPage() {
       )
       .on(
         "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "conversations",
-        },
+        { event: "INSERT", schema: "public", table: "conversations" },
+        () => {
+          // Nova conversa criada — recarrega a lista
+          api.conversations.list().then(setConversations).catch(console.error);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "conversations" },
         (payload) => {
           const updated = payload.new as Conversation;
           setConversations((prev) =>
             prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c))
           );
-          if (selected?.id === updated.id) {
+          if (selectedRef.current?.id === updated.id) {
             setSelected((prev) => (prev ? { ...prev, ...updated } : prev));
           }
         }
@@ -107,7 +111,7 @@ export default function InboxPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [selected?.id]);
+  }, []); // [] = criada 1x no mount, não recria ao clicar em conversas
 
   const handleSelectConversation = useCallback((conv: Conversation) => {
     setSelected(conv);
