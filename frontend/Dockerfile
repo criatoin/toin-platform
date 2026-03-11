@@ -1,6 +1,16 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+# Declara build args para variáveis NEXT_PUBLIC_* (precisam estar disponíveis em build time)
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+ARG NEXT_PUBLIC_API_URL
+
+# Expõe como variáveis de ambiente para o npm run build
+ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 COPY package*.json ./
 RUN npm ci
 
