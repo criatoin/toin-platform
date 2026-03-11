@@ -11,7 +11,9 @@ class Settings(BaseSettings):
     evolution_api_url: str
     evolution_api_key: str
     openrouter_api_key: str
-    google_calendar_credentials_json: str = "{}"
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    google_refresh_token: str = ""
     google_calendar_id: str = "primary"
     langfuse_public_key: str = ""
     langfuse_secret_key: str = ""

@@ -1,24 +1,30 @@
-from google.oauth2 import service_account
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from datetime import datetime, timedelta
-import json
 from api.config import settings
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
 
 def get_calendar_service():
-    creds_dict = json.loads(settings.google_calendar_credentials_json)
-    creds = service_account.Credentials.from_service_account_info(
-        creds_dict, scopes=SCOPES
+    creds = Credentials(
+        token=None,
+        refresh_token=settings.google_refresh_token,
+        token_uri="https://oauth2.googleapis.com/token",
+        client_id=settings.google_client_id,
+        client_secret=settings.google_client_secret,
+        scopes=SCOPES,
     )
+    if not creds.valid:
+        creds.refresh(Request())
     return build("calendar", "v3", credentials=creds)
 
 
 def list_available_slots(
     calendar_id: str, days_ahead: int = 7, duration_minutes: int = 30
 ) -> list[str]:
-    """Retorna horarios livres nos proximos N dias (formato ISO)."""
+    """Retorna horários livres nos próximos N dias (formato ISO)."""
     service = get_calendar_service()
     now = datetime.utcnow()
     end = now + timedelta(days=days_ahead)
@@ -44,7 +50,7 @@ def list_available_slots(
     slots = []
     current = now.replace(hour=9, minute=0, second=0, microsecond=0) + timedelta(days=1)
 
-    while current < end and len(slots) < 10:
+    while current < end and len(slots) < 6:
         if current.weekday() < 5:  # seg-sex
             is_busy = any(
                 datetime.fromisoformat(b[0].replace("Z", "+00:00")) <= current
@@ -54,7 +60,7 @@ def list_available_slots(
             if not is_busy:
                 slots.append(current.isoformat())
         current += timedelta(hours=1)
-        if current.hour >= 17:
+        if current.hour >= 18:
             current = current.replace(hour=9) + timedelta(days=1)
 
     return slots

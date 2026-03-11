@@ -21,7 +21,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
       "httpx>=0.27.0" \
       "python-dotenv>=1.0.0" \
       "google-api-python-client>=2.0.0" \
-      "google-auth>=2.0.0"
+      "google-auth>=2.0.0" \
+      "google-auth-oauthlib>=1.0.0"
 
 # Copia codigo apos instalar deps (aproveita cache de camadas Docker)
 COPY . .
