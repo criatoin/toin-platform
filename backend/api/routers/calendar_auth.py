@@ -39,8 +39,7 @@ def calendar_auth():
     flow = _build_flow()
     auth_url, _ = flow.authorization_url(
         access_type="offline",
-        prompt="consent",
-        login_hint="danillo@criatoin.com.br",
+        prompt="select_account consent",  # força escolha de conta
     )
     return RedirectResponse(auth_url)
 
